@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home Buying Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--fg:#fff;--mid:#8a8a8a;--line:#2b2b2b}
+:root[data-theme="light"]{--bg:#fff;--fg:#000;--mid:#6b6b6b;--line:#d9d9d9}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.muted{color:var(--mid)}
+.top{display:flex;align-items:center;gap:32px;padding:18px clamp(20px,5vw,56px);border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+.brand{font-weight:800;letter-spacing:-.02em;white-space:nowrap}
+.tabs{display:flex;gap:24px;flex:1;overflow-x:auto}
+.tabs button{background:none;border:0;padding:4px 0;color:var(--mid);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--fg);border-color:var(--fg)}
+.ghost{background:none;border:1px solid var(--line);border-radius:999px;padding:6px 16px;cursor:pointer;color:var(--mid)}
+.ghost:hover{color:var(--fg);border-color:var(--fg)}
+main{max-width:960px;margin:0 auto;padding:0 clamp(20px,5vw,56px) 96px}
+.hero{display:flex;align-items:flex-end;gap:clamp(24px,5vw,64px);padding:56px 0 40px;flex-wrap:wrap}
+.big{font-weight:800;font-size:clamp(120px,24vw,240px);line-height:.8;letter-spacing:-.06em;font-variant-numeric:tabular-nums}
+.big small{font-size:.3em;letter-spacing:0;font-weight:600;margin-left:.08em;color:var(--mid)}
+.hero-side{flex:1;min-width:240px;padding-bottom:6px}
+.property{width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:8px 0;font-size:1.35rem;font-weight:600;letter-spacing:-.01em}
+.property::placeholder{color:var(--mid);font-weight:400}
+.property:focus{outline:none;border-color:var(--fg)}
+.hero-side p{margin:14px 0 10px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--fg);transition:width .4s ease}
+.tools{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:8px;flex-wrap:wrap}
+.intro{margin:0 0 8px;color:var(--mid);max-width:60ch}
+
+/* ranked top 10 */
+.rank{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.rank li{border-bottom:1px solid var(--line)}
+.rank label{display:flex;gap:20px;align-items:flex-start;padding:22px 0;cursor:pointer;position:relative}
+.rank .n{flex:none;width:2.2ch;font-size:2.4rem;font-weight:800;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
+.rank .txt{flex:1}
+.rank h3{margin:0;font-size:1.25rem;font-weight:600;letter-spacing:-.01em}
+.rank p{margin:4px 0 0;color:var(--mid);font-size:.95rem}
+.rank .cost{display:inline-block;margin-top:8px;font-size:.85rem;border:1px solid var(--fg);border-radius:999px;padding:1px 10px}
+.rank input:checked~.txt h3{text-decoration:line-through;color:var(--mid)}
+.rank input:checked~.n{color:var(--mid)}
+
+/* check boxes */
+input[type=checkbox]{position:absolute;opacity:0}
+.box{flex:none;width:22px;height:22px;border:2px solid var(--fg);border-radius:4px;margin-top:2px;display:grid;place-items:center}
+.box::after{content:"";width:10px;height:10px;background:var(--fg);transform:scale(0);transition:transform .12s}
+input:checked+.box::after{transform:scale(1)}
+input:focus-visible+.box{outline:2px solid var(--fg);outline-offset:3px}
+
+/* groups */
+details{border-top:1px solid var(--line)}
+details:last-child{border-bottom:1px solid var(--line)}
+summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:16px;padding:22px 0}
+summary::-webkit-details-marker{display:none}
+summary h2{margin:0;font-size:1.5rem;letter-spacing:-.02em;font-weight:600;flex:1}
+summary .note{color:var(--mid);font-size:.9rem}
+summary .tally{font-variant-numeric:tabular-nums;color:var(--mid)}
+summary .chev{width:10px;height:10px;border-right:2px solid var(--mid);border-bottom:2px solid var(--mid);transform:rotate(45deg) translateY(-3px);transition:transform .2s}
+details[open] .chev{transform:rotate(-135deg) translate(-2px,-2px)}
+details.done h2{color:var(--mid);text-decoration:line-through;text-decoration-thickness:1px}
+ul.items{list-style:none;margin:0;padding:0 0 18px}
+.items li label{display:flex;gap:16px;align-items:flex-start;padding:10px 0;cursor:pointer;position:relative}
+.items .txt{flex:1}
+.items input:checked~.txt .t{color:var(--mid);text-decoration:line-through}
+.where{display:block;color:var(--mid);font-size:.85rem}
+.flag{display:inline-block;margin-top:4px;font-size:.82rem;background:var(--fg);color:var(--bg);padding:1px 10px;border-radius:999px}
+
+/* severity tags: weight of the outline = seriousness */
+.sev{flex:none;font-size:.78rem;border-radius:999px;padding:1px 10px;margin-top:3px;white-space:nowrap}
+.s1{background:var(--fg);color:var(--bg);font-weight:600}
+.s2{border:2px solid var(--fg)}
+.s3{border:1px solid var(--mid);color:var(--mid)}
+.s4{color:var(--mid);padding-left:0}
+.empty{padding:48px 0;color:var(--mid)}
+.online{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.online li{border-bottom:1px solid var(--line)}
+.online label.row{display:flex;gap:16px;align-items:flex-start;padding:22px 0 8px;cursor:pointer;position:relative}
+.online h3{margin:0;font-size:1.25rem;font-weight:600;letter-spacing:-.01em;flex:1}
+.online input:checked~.txt h3{text-decoration:line-through;color:var(--mid)}
+.online .txt{flex:1}
+.online .what{margin:4px 0 0;color:var(--mid);font-size:.95rem}
+.online .how{margin:10px 0 0;padding-left:3.6rem;font-size:.95rem}
+.online .links{padding:10px 0 22px 3.6rem;display:flex;gap:10px;flex-wrap:wrap}
+.online .links a{color:var(--fg);border:1px solid var(--fg);border-radius:999px;padding:3px 14px;text-decoration:none;font-size:.9rem}
+.online .links a:hover{background:var(--fg);color:var(--bg)}
+.online .how{margin-top:0;padding-left:38px;color:var(--fg)}
+.online .links{padding-left:38px}
+.note-box{border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin:0 0 20px;color:var(--mid);font-size:.95rem}
+@media (max-width:640px){.top{flex-wrap:wrap;gap:12px}.tabs{order:3;flex-basis:100%}summary .note{display:none}.rank .n{font-size:1.8rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="brand">Home Buying Checklist</span>
+  <nav id="tabs" class="tabs" role="tablist"></nav>
+  <button id="theme" class="ghost" aria-label="Switch black and white">Invert</button>
+</header>
+<main>
+  <div class="hero">
+    <div class="big"><span id="pct">0</span><small>%</small></div>
+    <div class="hero-side">
+      <input id="property" class="property" placeholder="Property address" aria-label="Property address" autocomplete="off">
+      <p id="count" class="muted"></p>
+      <div class="bar"><i id="bar"></i></div>
+    </div>
+  </div>
+  <div class="tools"><p id="intro" class="intro"></p><button id="reset" class="ghost">Reset all</button></div>
+  <div id="view"></div>
+</main>
+
+<script>
+// Severity: 1 deal-breaker, 2 major, 3 moderate, 4 minor
+const SEV = {1:'Deal-breaker',2:'Major',3:'Moderate',4:'Minor'};
+const SEV_NOTE = {1:'Can sink the purchase or cost $10,000+',2:'Expensive or risky, but you can plan for it',3:'Wear and tear you can budget for',4:'Low cost or cosmetic'};
+
+const TOP10 = [
+ {t:'Is there water in the basement or foundation damage?',w:'Ask about past flooding and insurance claims. Look for cracks, bowing walls and damp.',c:'$10,000 to $30,000+'},
+ {t:'What condition is the sewer line in?',w:'Pay for the camera scope. A failed line often shows up only after you own the house.',c:'$5,000 to $15,000+'},
+ {t:'What electrical panel and wiring does it have?',w:'A 60-amp or fuse panel, or knob-and-tube wiring, is the problem to look for.',c:'$10,000 to $30,000+'},
+ {t:'Will an insurer cover it as it stands?',w:'Get a quote before you waive conditions and disclose the panel, wiring and pipes. No insurance can mean no mortgage.',c:'Can stop the sale'},
+ {t:'Is there an old or abandoned oil tank?',w:'Ask directly and have the inspector check. Cleanup is costly and affects insurance.',c:'Often $5,000 to $20,000+'},
+ {t:'What are the water service pipe and plumbing made of?',w:'Lead or galvanized pipes can mean costly replacement and health concerns.',c:'$3,000 to $15,000+'},
+ {t:'How old are the roof, furnace and windows?',w:'Use their age to plan when you will replace them. Predictable, so lower than hidden problems.',c:'$5,000 to $30,000 over time'},
+ {t:'Were the renovations permitted?',w:'Unpermitted basement apartments, removed walls or rewiring can mean rework and insurance trouble. Check City of Toronto records.',c:'Varies'},
+ {t:'Is there asbestos, vermiculite or lead paint?',w:'Only a problem if disturbed, but it adds real cost to any renovation.',c:'Adds to reno cost'},
+ {t:'Are there liens, easements or title problems?',w:'Rare, but serious. Make sure your lawyer checks title.',c:'Lawyer review'}
+];
+
+const DATA = [
+ {id:'research',title:'Before you view',note:'Paperwork and research',items:[
+  ['Ask the agent for the year built and what has been updated, and when',3],
+  ['Ask for permits and receipts for wiring, plumbing, additions and basement work',2],
+  ['Check City of Toronto building permit records for the address',3],
+  ['Ask about water in the basement, insurance claims and past flooding',1],
+  ['Get the PIN and have your lawyer check title for liens, easements and encroachments',2],
+  ['Ask if the home is on a heritage register',4]]},
+ {id:'electrical',title:'Electrical',note:'Rewiring can cost $10,000 to $30,000+',items:[
+  ['Breaker panel at 100 amps or more',1,'A 60-amp or fuse panel is a red flag'],
+  ['No knob-and-tube wiring in the attic or basement',1,'Ceramic knobs and cloth-wrapped wires'],
+  ['No aluminum wiring',2],
+  ['Grounded outlets throughout, GFCIs in kitchen and bathrooms',3],
+  ['Insurer confirmed they will cover the wiring and panel',1]]},
+ {id:'plumbing',title:'Plumbing',note:'Sewer repairs often run $5,000 to $15,000+',items:[
+  ['Pipes are copper or PEX',2,'Galvanized or lead is a problem'],
+  ['Water service pipe from the street is not lead or galvanized',2],
+  ['Water pressure and drain speed tested at every sink, tub and toilet',3],
+  ['Sewer camera scope done ($300 to $500)',1],
+  ['Backwater valve and sump pump present',3],
+  ['Water heater age checked, and owned or rental confirmed',3]]},
+ {id:'foundation',title:'Basement and foundation',note:'Fixes can cost $10,000 to $30,000+',items:[
+  ['No horizontal or stair-step cracks, bowing walls or uneven floors',1],
+  ['No water stains, white powder on walls or musty smell',1],
+  ['Exterior waterproofing checked, with date',2],
+  ['Ground slopes away from the house',2],
+  ['Ceiling height checked if you plan to finish or rent the basement',4],
+  ['No fresh paint or drywall in one spot hiding a problem',3]]},
+ {id:'heating',title:'Heating, insulation and energy',note:'Mostly wear and tear, but it adds up',items:[
+  ['Furnace age and type (15 to 20 years is near end of life)',3],
+  ['No old or abandoned oil tank',1,'Cleanup is costly and affects insurance'],
+  ['Attic insulation depth checked, no vermiculite',2,'Vermiculite may contain asbestos'],
+  ['Wall insulation checked',4],
+  ['Windows checked for age, condition and drafts',4]]},
+ {id:'exterior',title:'Roof and exterior',note:'',items:[
+  ['Roof age and condition (curling, missing or mossy shingles)',3],
+  ['Eavestroughs and downspouts drain away from the house',3],
+  ['Brick and mortar are not crumbling or cracked',3],
+  ['Chimney condition and lining',3],
+  ['Driveway, porch and steps are not cracked or sinking',4]]},
+ {id:'interior',title:'Interior and health',note:'',items:[
+  ['No water stains or sagging on ceilings and walls',3],
+  ['Floors do not slope, bounce or squeak excessively',3],
+  ['Old floor tiles, popcorn ceilings or pipe wrap checked for asbestos',2],
+  ['Lead paint assumed under old paint, with no sanding plans',2],
+  ['No mold or signs of carpenter ants, mice or termites',2],
+  ['No unpermitted layout changes such as a basement apartment or removed walls',2]]},
+ {id:'conditions',title:'Before you waive conditions',note:'',items:[
+  ['Full home inspection done, and you attended',1],
+  ['Sewer scope done',1],
+  ['Insurance quote in hand, with panel and wiring disclosed',1],
+  ['Quotes for big repairs used to negotiate the price',3],
+  ['Budget works after a repair reserve of 1% to 3% of home value per year',2]]}
+];
+
+const ONLINE = [
+ {t:'Is the water service pipe lead?',sev:1,w:'Homes built before the mid-1950s may have a lead water service pipe, so a 1950 house probably does.',
+  how:'Ask the city to check its records by submitting a 311 service request for the address (it can take up to 30 business days, so start early). The owner can also have a plumber look at the pipe where it enters the basement. Homeowners can get free lead water testing from the city.',
+  links:[['Toronto lead in drinking water','https://www.toronto.ca/services-payments/water-environment/tap-water-in-toronto/lead-drinking-water/']]},
+ {t:'Is watermain work planned on the street?',sev:2,w:'The city replaces its side of lead pipes during scheduled street work. You pay for the private side.',
+  how:'Read how the replacement program works and ask 311 whether work is planned on this street. If the city is replacing its side, replacing yours at the same time is recommended.',
+  links:[['Water service replacement program','https://www.toronto.ca/services-payments/water-environment/tap-water-in-toronto/lead-drinking-water/capital-water-service-replacement-program/']]},
+ {t:'What permits were issued for this address?',sev:2,w:'Confirms renovations were permitted and shows what was done and when.',
+  how:'Permits from 2000 on are in the city\u2019s open data as downloadable files (active and cleared). Search the file for the street address. For older permits, contact Toronto Building Customer Service. For the former City of Toronto, permit stubs for 1927 to 1970 are held at the City Archives and viewed in person. The Application Information Centre only shows planning and Committee of Adjustment applications, and closed ones may be missing.',
+  links:[['Toronto Open Data','https://open.toronto.ca/'],['Application Information Centre','https://www.toronto.ca/city-government/planning-development/application-information-centre/']]},
+ {t:'What do past listings and sale records show?',sev:3,w:'Old photos can show earlier renovations, kitchen and basement condition, and past sale prices.',
+  how:'Search the exact address on Realtor.ca and HouseSigma and look at sold history. Also search the address on Google for older listing photos. Compare old and new photos for fresh paint covering damage or unpermitted changes.',
+  links:[['Realtor.ca','https://www.realtor.ca/'],['HouseSigma','https://housesigma.com/']]},
+ {t:'What do old street and satellite images show?',sev:3,w:'Gives rough dates for the roof, additions, driveway and trees near the sewer line.',
+  how:'In Google Maps, open Street View and use the time control to step back through past years. In Google Earth, use the historical imagery slider to see when the roof, additions or exterior changed.',
+  links:[['Google Maps','https://www.google.com/maps'],['Google Earth','https://earth.google.com/web/']]},
+ {t:'Is it on the Heritage Register?',sev:4,w:'Heritage listing can limit renovations and add approval steps.',
+  how:'Go to toronto.ca and search for \u201cHeritage Register\u201d, then search the address. Also check the Toronto Maps layers for the property.',
+  links:[['City of Toronto','https://www.toronto.ca/'],['Toronto Maps','https://map.toronto.ca/']]},
+ {t:'What are the lot size, zoning and tax details?',sev:4,w:'Useful for future additions or a basement suite. The lot and zoning limit what you can build.',
+  how:'Use Toronto Maps to view the parcel and its zoning. MPAC shows assessment details, but year built is usually only visible to the owner.',
+  links:[['Toronto Maps','https://map.toronto.ca/'],['MPAC','https://www.mpac.ca/']]}
+];
+
+// flatten
+const ITEMS = [];
+ONLINE.forEach((o,i)=>o.k='o:'+i);
+DATA.forEach(s => s.items.forEach((it,i) => ITEMS.push({k:s.id+':'+i,t:it[0],sev:it[1],flag:it[2]||'',sec:s.title,sid:s.id})));
+
+const TABS = [{id:'top',label:'Top 10 questions'},{id:'sev',label:'By severity'},{id:'area',label:'By area'},{id:'online',label:'Free online checks'}];
+const INTRO = {
+ top:'The ten questions that matter most, from most to least serious. Settle the first four before anything cosmetic.',
+ sev:'Every checklist item, grouped from deal-breakers down to minor.',
+ area:'Every checklist item, grouped by area of the house.',
+ online:'Things you can confirm for free from your couch, with where to look. Ordered from most to least serious.'};
+
+const $ = (s,el=document)=>el.querySelector(s);
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let checked=store.get('hbc2.checked',{});
+let tab=store.get('hbc2.tab','top');
+let open=new Set(store.get('hbc2.open',['s1','research']));
+
+function itemRow(it,showSec){
+  return `<li><label><input type="checkbox" data-k="${it.k}" ${checked[it.k]?'checked':''}><span class="box"></span>
+  <span class="txt"><span class="t">${esc(it.t)}</span>${showSec?`<span class="where">${esc(it.sec)}</span>`:''}${it.flag?`<span class="flag">${esc(it.flag)}</span>`:''}</span>
+  <span class="sev s${it.sev}">${SEV[it.sev]}</span></label></li>`;
+}
+function group(id,title,note,list,showSec){
+  const n=list.filter(i=>checked[i.k]).length;
+  return `<details data-id="${id}" class="${n===list.length?'done':''}" ${open.has(id)?'open':''}>
+  <summary><h2>${esc(title)}</h2><span class="note">${esc(note)}</span><span class="tally">${n}/${list.length}</span><span class="chev"></span></summary>
+  <ul class="items">${list.map(i=>itemRow(i,showSec)).join('')}</ul></details>`;
+}
+
+function render(){
+  let h='';
+  if(tab==='top'){
+    h='<ol class="rank">'+TOP10.map((q,i)=>`<li><label><input type="checkbox" data-k="q:${i}" ${checked['q:'+i]?'checked':''}><span class="box"></span>
+      <span class="n">${i+1}</span><span class="txt"><h3>${esc(q.t)}</h3><p>${esc(q.w)}</p><span class="cost">${esc(q.c)}</span></span></label></li>`).join('')+'</ol>';
+  }else if(tab==='sev'){
+    h=[1,2,3,4].map(s=>group('s'+s,SEV[s],SEV_NOTE[s],ITEMS.filter(i=>i.sev===s),true)).join('');
+  }else if(tab==='online'){
+    h='<p class="note-box">Insurance quotes, the sewer scope and the home inspection are not online checks. Do those before you waive conditions.</p><ul class="online">'+ONLINE.map(o=>`<li><label class="row"><input type="checkbox" data-k="${o.k}" ${checked[o.k]?'checked':''}><span class="box"></span>
+      <span class="txt"><h3>${esc(o.t)}</h3><p class="what">${esc(o.w)}</p></span><span class="sev s${o.sev}">${SEV[o.sev]}</span></label>
+      <p class="how">${esc(o.how)}</p><div class="links">${o.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener noreferrer">${esc(l[0])}</a>`).join('')}</div></li>`).join('')+'</ul>';
+  }else{
+    h=DATA.map(s=>group(s.id,s.title,s.note,ITEMS.filter(i=>i.sid===s.id),false)).join('');
+  }
+  $('#view').innerHTML=h;
+  $('#intro').textContent=INTRO[tab];
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.id===tab));
+  progress();
+}
+function progress(){
+  const done=ITEMS.filter(i=>checked[i.k]).length, total=ITEMS.length, pct=Math.round(done/total*100);
+  $('#pct').textContent=pct; $('#bar').style.width=pct+'%';
+  const q=TOP10.filter((_,i)=>checked['q:'+i]).length;
+  $('#count').textContent=`${done} of ${total} checklist items checked, ${q} of 10 top questions answered, ${ONLINE.filter(o=>checked[o.k]).length} of ${ONLINE.length} online checks done`;
+}
+
+$('#tabs').innerHTML=TABS.map(t=>`<button role="tab" data-id="${t.id}">${t.label}</button>`).join('');
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.id;store.set('hbc2.tab',tab);render();});
+$('#view').addEventListener('change',e=>{
+  const k=e.target.dataset.k;if(!k)return;
+  checked[k]=e.target.checked;store.set('hbc2.checked',checked);
+  const det=e.target.closest('details');
+  if(det){const boxes=det.querySelectorAll('input[type=checkbox]');const n=[...boxes].filter(b=>b.checked).length;
+    $('.tally',det).textContent=n+'/'+boxes.length;det.classList.toggle('done',n===boxes.length);}
+  progress();
+});
+$('#view').addEventListener('toggle',e=>{const id=e.target.dataset&&e.target.dataset.id;if(!id)return;
+  e.target.open?open.add(id):open.delete(id);store.set('hbc2.open',[...open]);},true);
+$('#reset').addEventListener('click',()=>{if(confirm('Clear every checkmark?')){checked={};store.set('hbc2.checked',checked);render();}});
+const prop=$('#property');prop.value=store.get('hbc2.property','');prop.addEventListener('input',()=>store.set('hbc2.property',prop.value));
+document.documentElement.dataset.theme=store.get('hbc2.theme','dark');
+$('#theme').addEventListener('click',()=>{const n=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=n;store.set('hbc2.theme',n);});
+render();
+</script>
+</body>
+</html>
