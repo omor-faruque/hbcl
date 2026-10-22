@@ -95,6 +95,24 @@ ul.items{list-style:none;margin:0;padding:0 0 18px}
 .online .how{margin-top:0;padding-left:38px;color:var(--fg)}
 .online .links{padding-left:38px}
 .note-box{border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin:0 0 20px;color:var(--mid);font-size:.95rem}
+#hero[hidden]{display:none}
+.property[type=date]{color-scheme:dark}
+:root[data-theme="light"] .property[type=date]{color-scheme:light}
+.stats{display:flex;gap:36px;flex-wrap:wrap;margin:18px 0 0}
+.stat b{display:block;font-size:1.2rem;font-weight:600}
+.stat span{color:var(--mid);font-size:.85rem}
+.h2{font-size:1.5rem;letter-spacing:-.02em;font-weight:600;margin:40px 0 8px}
+a.pill{display:inline-block;color:var(--fg);border:1px solid var(--fg);border-radius:999px;padding:3px 14px;text-decoration:none;font-size:.9rem;margin-top:12px}
+a.pill:hover{background:var(--fg);color:var(--bg)}
+.ask{list-style:none;margin:0;padding:0 0 18px}
+.ask li{padding:10px 0}
+.ask label{display:flex;gap:16px;align-items:flex-start;cursor:pointer;position:relative}
+.ask .q{font-weight:600}
+.ask .d{display:block;color:var(--mid);font-size:.92rem;margin-top:2px}
+.ask input[type=checkbox]:checked~.txt .q{color:var(--mid);text-decoration:line-through}
+.ans{display:block;width:calc(100% - 38px);margin:8px 0 0 38px;background:none;border:0;border-bottom:1px solid var(--line);padding:4px 0;font-size:.95rem}
+.ans:focus{outline:none;border-color:var(--fg)}
+.ans::placeholder{color:var(--mid)}
 @media (max-width:640px){.top{flex-wrap:wrap;gap:12px}.tabs{order:3;flex-basis:100%}summary .note{display:none}.rank .n{font-size:1.8rem}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -106,7 +124,7 @@ ul.items{list-style:none;margin:0;padding:0 0 18px}
   <button id="theme" class="ghost" aria-label="Switch black and white">Invert</button>
 </header>
 <main>
-  <div class="hero">
+  <div class="hero" id="hero">
     <div class="big"><span id="pct">0</span><small>%</small></div>
     <div class="hero-side">
       <input id="property" class="property" placeholder="Property address" aria-label="Property address" autocomplete="off">
@@ -215,24 +233,69 @@ const ONLINE = [
   links:[['Toronto Maps','https://map.toronto.ca/'],['MPAC','https://www.mpac.ca/']]}
 ];
 
+const HBP = [
+ 'You are buying or building a qualifying home in Canada and are a Canadian resident',
+ 'First-time buyer test: in the last 4 years, you did not live in a home you or your spouse or partner owned (confirm the exact wording with CRA)',
+ 'You have a written agreement to buy or build the home',
+ 'You plan to live in it as your main home within one year of buying',
+ 'Total HBP withdrawals are $60,000 or less per person',
+ 'Withdraw before you close, or within 30 days after you acquire the home',
+ 'Fill out Form T1036 and give it to your RRSP provider (ask how long they take to process it)',
+ 'You will repay 1/15 of the amount each year over 15 years, or the missed amount is added to your income'
+];
+
+const BROKER = [
+ {id:'b0',title:'Prepayment and lump sums',note:'How fast you can pay the mortgage down',items:[
+  ['What is the annual lump-sum limit?','Typically 10 to 20% of the original principal per year, so about $40,000 to $80,000 on a $400k mortgage. Anything within that limit is free.'],
+  ['When can I make the payment?','Some lenders allow lump sums on any date, others only on the anniversary date.'],
+  ['What is the penalty above the limit?','For a variable rate it is usually three months\u2019 interest on the excess. As a rough example, $100,000 at about 3.4% is around $850. Confirm how your lender calculates it, because some charge on the whole amount prepaid.'],
+  ['Can I pay down any amount at renewal with no penalty?','At the end of your term, you can usually pay down any amount with no penalty.'],
+  ['Can I raise my regular payments, and by how much?','Many lenders let you increase payments by a set percentage. Ask the limit and how often you can change it.']]},
+ {id:'b1',title:'Rate and product',note:'What you are signing up for',items:[
+  ['Fixed or variable, and what is the rate on each?','Ask for the actual rate, not just the posted rate, and whether it is the best rate you qualify for.'],
+  ['How long is the rate hold?','Ask how many days the quoted rate is guaranteed while you shop for a house.'],
+  ['How is the penalty calculated on a fixed rate?','Fixed penalties are often the greater of three months\u2019 interest or the interest rate differential. Ask for an example in dollars.'],
+  ['What term and amortization are available to me?','Ask what amortization a first-time buyer can get, and how it changes the payment.'],
+  ['Can I port or transfer the mortgage if I move or sell?','Ask what it costs and what the conditions are.']]},
+ {id:'b2',title:'Down payment and your RRSP',note:'Using the Home Buyers\u2019 Plan',items:[
+  ['Does the lender accept RRSP Home Buyers\u2019 Plan funds as my down payment?','Ask what proof they need and how far before closing the funds must be in your account.'],
+  ['How long does the RRSP withdrawal take to arrive?','Ask your RRSP provider too, since they must complete Form T1036.'],
+  ['What is the minimum down payment, and what does mortgage default insurance cost?','Ask for the premium in dollars and whether it is added to the mortgage.']]},
+ {id:'b3',title:'Fees and closing costs',note:'The money on top of the price',items:[
+  ['Which fees apply: appraisal, legal, title insurance, lender or broker fees?','Ask for the full list in writing with amounts.'],
+  ['What land transfer tax rebates apply to a first-time buyer?','Ask about both the Ontario and Toronto land transfer taxes.'],
+  ['Are there cashback offers, and what are the strings attached?','Cashback often comes with a higher rate or a larger penalty.']]},
+ {id:'b4',title:'Buying an older home',note:'Matters for a 1950 house',items:[
+  ['Will the lender finance an older home that needs work?','Ask about conditions based on the inspection or appraisal.'],
+  ['Is there a purchase-plus-improvements mortgage?','This can roll repair costs into the mortgage. Ask how it works and what it costs.'],
+  ['What if insurance is refused because of the wiring or panel?','Ask whether that can stop the mortgage and what the lender requires as proof of insurance.']]},
+ {id:'b5',title:'Approval and paperwork',note:'Avoid surprises',items:[
+  ['Is this a pre-approval or a full approval, and how long does it last?','Ask what could change it between now and closing.'],
+  ['What documents do you need from me?','Ask for the whole list up front, including proof of down payment.'],
+  ['What rate was I qualified at?','Ask how much room you have if rates change before closing.']]}
+];
+
 // flatten
 const ITEMS = [];
 ONLINE.forEach((o,i)=>o.k='o:'+i);
 DATA.forEach(s => s.items.forEach((it,i) => ITEMS.push({k:s.id+':'+i,t:it[0],sev:it[1],flag:it[2]||'',sec:s.title,sid:s.id})));
 
-const TABS = [{id:'top',label:'Top 10 questions'},{id:'sev',label:'By severity'},{id:'area',label:'By area'},{id:'online',label:'Free online checks'}];
+const TABS = [{id:'top',label:'Top 10 questions'},{id:'sev',label:'By severity'},{id:'area',label:'By area'},{id:'online',label:'Free online checks'},{id:'rrsp',label:'RRSP 90-day counter'},{id:'broker',label:'Ask your broker'}];
 const INTRO = {
  top:'The ten questions that matter most, from most to least serious. Settle the first four before anything cosmetic.',
  sev:'Every checklist item, grouped from deal-breakers down to minor.',
  area:'Every checklist item, grouped by area of the house.',
- online:'Things you can confirm for free from your couch, with where to look. Ordered from most to least serious.'};
+ online:'Things you can confirm for free from your couch, with where to look. Ordered from most to least serious.',
+ rrsp:'Counts the days since your RRSP contribution so you know when you can withdraw under the Home Buyers\u2019 Plan.',
+ broker:'Questions to ask your mortgage broker. Tick each one when asked and write down the answer.'};
 
 const $ = (s,el=document)=>el.querySelector(s);
 const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let checked=store.get('hbc2.checked',{});
 let tab=store.get('hbc2.tab','top');
-let open=new Set(store.get('hbc2.open',['s1','research']));
+let open=new Set(store.get('hbc2.open',['s1','research','b0']));
+let notes=store.get('hbc2.notes',{});
 
 function itemRow(it,showSec){
   return `<li><label><input type="checkbox" data-k="${it.k}" ${checked[it.k]?'checked':''}><span class="box"></span>
@@ -246,6 +309,32 @@ function group(id,title,note,list,showSec){
   <ul class="items">${list.map(i=>itemRow(i,showSec)).join('')}</ul></details>`;
 }
 
+const dnum=(y,m,d)=>Date.UTC(y,m-1,d)/864e5;
+const fmt=n=>new Date(n*864e5).toLocaleDateString('en-CA',{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'});
+function rrspHTML(){
+  const start=store.get('hbc2.rrspStart','2026-10-20');
+  const ok=/^\d{4}-\d{2}-\d{2}$/.test(start);
+  let hero;
+  if(!ok){hero=`<div class="hero"><div class="big"><span>?</span></div><div class="hero-side"><label class="muted" for="rrspDate">RRSP contribution date</label><input id="rrspDate" type="date" class="property" value=""><p class="muted">Pick the date your contribution was received.</p></div></div>`;}
+  else{
+    const [y,m,d]=start.split('-').map(Number), a=dnum(y,m,d), t=new Date(), today=dnum(t.getFullYear(),t.getMonth()+1,t.getDate());
+    const elapsed=today-a, left=Math.max(0,90-elapsed), pct=Math.min(100,Math.max(0,elapsed/90*100));
+    const status=elapsed<0?'That date is in the future.':elapsed<90?`Day ${elapsed} of 90. Safe to withdraw from ${fmt(a+91)}.`:elapsed<91?`90 days complete today. Safe to withdraw from tomorrow, ${fmt(a+91)}.`:`Past the safe day (${fmt(a+91)}). You can withdraw.`;
+    hero=`<div class="hero"><div class="big"><span>${left}</span><small>days left</small></div><div class="hero-side"><label class="muted" for="rrspDate">RRSP contribution date</label>
+      <input id="rrspDate" type="date" class="property" value="${start}"><p class="muted">${status}</p><div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="stats"><div class="stat"><b>${fmt(a+91)}</b><span>Safe to withdraw</span></div><div class="stat"><b>${fmt(a+90)}</b><span>90 days complete</span></div><div class="stat"><b>${fmt(a+89)}</b><span>CRA 89-day mark</span></div></div></div></div>`;
+  }
+  return hero+`<p class="note-box">CRA\u2019s rule is about the 89-day period before you withdraw. Contributions made in that period may not be fully tax-deductible if the RRSP value after the withdrawal is lower than those contributions. So withdrawing early may cost you a tax deduction rather than block the plan. Waiting until the safe day, one day after the full 90, adds a small buffer. Count from the day your RRSP provider received the money, which can differ from the day you decided to contribute. I am not a tax advisor, so confirm with your RRSP provider or CRA.</p>
+  <h2 class="h2">Home Buyers\u2019 Plan checklist</h2><ul class="items">${HBP.map((t,i)=>`<li><label><input type="checkbox" data-k="h:${i}" ${checked['h:'+i]?'checked':''}><span class="box"></span><span class="txt"><span class="t">${esc(t)}</span></span></label></li>`).join('')}</ul>
+  <a class="pill" href="https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/rrsps-related-plans/what-home-buyers-plan/withdraw-funds-rrsp-s-under-home-buyers-plan.html" target="_blank" rel="noopener noreferrer">CRA: how to withdraw under the HBP</a>`;
+}
+function brokerGroup(g,gi){
+  const n=g.items.filter((_,i)=>checked['b:'+gi+':'+i]).length;
+  return `<details data-id="${g.id}" class="${n===g.items.length?'done':''}" ${open.has(g.id)?'open':''}>
+  <summary><h2>${esc(g.title)}</h2><span class="note">${esc(g.note)}</span><span class="tally">${n}/${g.items.length}</span><span class="chev"></span></summary>
+  <ul class="ask">${g.items.map((it,i)=>{const k='b:'+gi+':'+i;return `<li><label><input type="checkbox" data-k="${k}" ${checked[k]?'checked':''}><span class="box"></span><span class="txt"><span class="q">${esc(it[0])}</span><span class="d">${esc(it[1])}</span></span></label>
+  <input class="ans" data-n="${k}" value="${esc(notes[k]||'')}" placeholder="What they said" aria-label="Answer"></li>`}).join('')}</ul></details>`;
+}
 function render(){
   let h='';
   if(tab==='top'){
@@ -257,9 +346,14 @@ function render(){
     h='<p class="note-box">Insurance quotes, the sewer scope and the home inspection are not online checks. Do those before you waive conditions.</p><ul class="online">'+ONLINE.map(o=>`<li><label class="row"><input type="checkbox" data-k="${o.k}" ${checked[o.k]?'checked':''}><span class="box"></span>
       <span class="txt"><h3>${esc(o.t)}</h3><p class="what">${esc(o.w)}</p></span><span class="sev s${o.sev}">${SEV[o.sev]}</span></label>
       <p class="how">${esc(o.how)}</p><div class="links">${o.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener noreferrer">${esc(l[0])}</a>`).join('')}</div></li>`).join('')+'</ul>';
+  }else if(tab==='rrsp'){
+    h=rrspHTML();
+  }else if(tab==='broker'){
+    h=BROKER.map(brokerGroup).join('');
   }else{
     h=DATA.map(s=>group(s.id,s.title,s.note,ITEMS.filter(i=>i.sid===s.id),false)).join('');
   }
+  $('#hero').hidden=(tab==='rrsp'||tab==='broker');
   $('#view').innerHTML=h;
   $('#intro').textContent=INTRO[tab];
   document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.id===tab));
@@ -275,6 +369,7 @@ function progress(){
 $('#tabs').innerHTML=TABS.map(t=>`<button role="tab" data-id="${t.id}">${t.label}</button>`).join('');
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.id;store.set('hbc2.tab',tab);render();});
 $('#view').addEventListener('change',e=>{
+  if(e.target.id==='rrspDate'){store.set('hbc2.rrspStart',e.target.value);render();return;}
   const k=e.target.dataset.k;if(!k)return;
   checked[k]=e.target.checked;store.set('hbc2.checked',checked);
   const det=e.target.closest('details');
@@ -282,6 +377,7 @@ $('#view').addEventListener('change',e=>{
     $('.tally',det).textContent=n+'/'+boxes.length;det.classList.toggle('done',n===boxes.length);}
   progress();
 });
+$('#view').addEventListener('input',e=>{const n=e.target.dataset&&e.target.dataset.n;if(!n)return;notes[n]=e.target.value;store.set('hbc2.notes',notes);});
 $('#view').addEventListener('toggle',e=>{const id=e.target.dataset&&e.target.dataset.id;if(!id)return;
   e.target.open?open.add(id):open.delete(id);store.set('hbc2.open',[...open]);},true);
 $('#reset').addEventListener('click',()=>{if(confirm('Clear every checkmark?')){checked={};store.set('hbc2.checked',checked);render();}});
