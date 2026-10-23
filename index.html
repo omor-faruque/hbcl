@@ -96,6 +96,7 @@ ul.items{list-style:none;margin:0;padding:0 0 18px}
 .online .links{padding-left:38px}
 .note-box{border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin:0 0 20px;color:var(--mid);font-size:.95rem}
 #hero[hidden]{display:none}
+#hero[hidden]+.tools{margin-top:40px}
 .property[type=date]{color-scheme:dark}
 :root[data-theme="light"] .property[type=date]{color-scheme:light}
 .stats{display:flex;gap:36px;flex-wrap:wrap;margin:18px 0 0}
@@ -113,6 +114,30 @@ a.pill:hover{background:var(--fg);color:var(--bg)}
 .ans{display:block;width:calc(100% - 38px);margin:8px 0 0 38px;background:none;border:0;border-bottom:1px solid var(--line);padding:4px 0;font-size:.95rem}
 .ans:focus{outline:none;border-color:var(--fg)}
 .ans::placeholder{color:var(--mid)}
+
+/* rrsp counter */
+.rr{display:grid;grid-template-columns:auto 1fr;gap:clamp(24px,5vw,64px);align-items:center;padding:48px 0 32px}
+.rr-num{font-weight:800;font-size:clamp(96px,17vw,176px);line-height:.85;letter-spacing:-.06em;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;align-items:flex-start}
+.rr-num small{font-size:1rem;letter-spacing:0;font-weight:600;color:var(--mid);margin-top:14px}
+.rr-side{min-width:0}
+.rr-side label{display:block;font-size:.85rem;color:var(--mid);margin-bottom:2px}
+.rr-status{margin:14px 0 0;font-size:1.05rem}
+.rr-prog{margin:8px 0 36px}
+.rr-prog .bar{height:8px}
+.rr-ticks{display:flex;justify-content:space-between;margin-top:8px;font-size:.8rem;color:var(--mid);font-variant-numeric:tabular-nums}
+.rr-dates{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0 0 28px}
+.rr-dates div{padding:18px 20px;border-left:1px solid var(--line)}
+.rr-dates div:first-child{border-left:0}
+.rr-dates b{display:block;font-size:1.25rem;font-weight:600;letter-spacing:-.01em}
+.rr-dates span{display:block;color:var(--mid);font-size:.85rem;margin-top:2px}
+.rr-dates .key{background:var(--fg);color:var(--bg)}
+.rr-dates .key span{color:var(--bg);opacity:.7}
+.rr-note{border:1px solid var(--line);border-radius:10px;padding:4px 20px;margin:0 0 8px}
+.rr-note summary{padding:14px 0}
+.rr-note p{margin:0 0 14px;color:var(--mid);font-size:.95rem;max-width:68ch}
+.rr-note ul{margin:0 0 14px;padding-left:20px;color:var(--mid);font-size:.95rem}
+.rr-note li{margin:4px 0}
+@media (max-width:640px){.rr{grid-template-columns:1fr;padding-top:28px}.rr-dates{grid-template-columns:1fr}.rr-dates div{border-left:0;border-top:1px solid var(--line)}.rr-dates div:first-child{border-top:0}}
 @media (max-width:640px){.top{flex-wrap:wrap;gap:12px}.tabs{order:3;flex-basis:100%}summary .note{display:none}.rank .n{font-size:1.8rem}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -314,17 +339,21 @@ const fmt=n=>new Date(n*864e5).toLocaleDateString('en-CA',{year:'numeric',month:
 function rrspHTML(){
   const start=store.get('hbc2.rrspStart','2026-10-20');
   const ok=/^\d{4}-\d{2}-\d{2}$/.test(start);
+  const field=v=>`<label for="rrspDate">RRSP contribution date</label><input id="rrspDate" type="date" class="property" value="${v}">`;
   let hero;
-  if(!ok){hero=`<div class="hero"><div class="big"><span>?</span></div><div class="hero-side"><label class="muted" for="rrspDate">RRSP contribution date</label><input id="rrspDate" type="date" class="property" value=""><p class="muted">Pick the date your contribution was received.</p></div></div>`;}
+  if(!ok){hero=`<div class="rr"><div class="rr-num"><span>?</span><small>days left</small></div><div class="rr-side">${field('')}<p class="rr-status muted">Pick the date your RRSP provider received the contribution.</p></div></div>`;}
   else{
     const [y,m,d]=start.split('-').map(Number), a=dnum(y,m,d), t=new Date(), today=dnum(t.getFullYear(),t.getMonth()+1,t.getDate());
     const elapsed=today-a, left=Math.max(0,90-elapsed), pct=Math.min(100,Math.max(0,elapsed/90*100));
     const status=elapsed<0?'That date is in the future.':elapsed<90?`Day ${elapsed} of 90. Safe to withdraw from ${fmt(a+91)}.`:elapsed<91?`90 days complete today. Safe to withdraw from tomorrow, ${fmt(a+91)}.`:`Past the safe day (${fmt(a+91)}). You can withdraw.`;
-    hero=`<div class="hero"><div class="big"><span>${left}</span><small>days left</small></div><div class="hero-side"><label class="muted" for="rrspDate">RRSP contribution date</label>
-      <input id="rrspDate" type="date" class="property" value="${start}"><p class="muted">${status}</p><div class="bar"><i style="width:${pct}%"></i></div>
-      <div class="stats"><div class="stat"><b>${fmt(a+91)}</b><span>Safe to withdraw</span></div><div class="stat"><b>${fmt(a+90)}</b><span>90 days complete</span></div><div class="stat"><b>${fmt(a+89)}</b><span>CRA 89-day mark</span></div></div></div></div>`;
+    hero=`<div class="rr"><div class="rr-num"><span>${left}</span><small>${left===1?'day left':'days left'}</small></div><div class="rr-side">${field(start)}<p class="rr-status">${status}</p></div></div>
+    <div class="rr-prog"><div class="bar"><i style="width:${pct}%"></i></div><div class="rr-ticks"><span>Day 0</span><span>Day 45</span><span>Day 90</span></div></div>
+    <div class="rr-dates"><div><b>${fmt(a+89)}</b><span>CRA 89-day mark</span></div><div><b>${fmt(a+90)}</b><span>90 days complete</span></div><div class="key"><b>${fmt(a+91)}</b><span>Safe to withdraw</span></div></div>`;
   }
-  return hero+`<p class="note-box">CRA\u2019s rule is about the 89-day period before you withdraw. Contributions made in that period may not be fully tax-deductible if the RRSP value after the withdrawal is lower than those contributions. So withdrawing early may cost you a tax deduction rather than block the plan. Waiting until the safe day, one day after the full 90, adds a small buffer. Count from the day your RRSP provider received the money, which can differ from the day you decided to contribute. I am not a tax advisor, so confirm with your RRSP provider or CRA.</p>
+  return hero+`<details class="rr-note"><summary><h2>How the 90-day rule works</h2><span class="chev"></span></summary>
+  <p>CRA looks at the 89-day period before you withdraw. Contributions made in that period may not be fully tax-deductible if your RRSP value after the withdrawal is lower than those contributions.</p>
+  <ul><li>Withdrawing early may cost you a tax deduction. It does not block the plan.</li><li>The safe day is one day after the full 90, which adds a small buffer.</li><li>Count from the day your RRSP provider received the money, not the day you decided to contribute.</li></ul>
+  <p>I am not a tax advisor, so confirm with your RRSP provider or CRA.</p></details>
   <h2 class="h2">Home Buyers\u2019 Plan checklist</h2><ul class="items">${HBP.map((t,i)=>`<li><label><input type="checkbox" data-k="h:${i}" ${checked['h:'+i]?'checked':''}><span class="box"></span><span class="txt"><span class="t">${esc(t)}</span></span></label></li>`).join('')}</ul>
   <a class="pill" href="https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/rrsps-related-plans/what-home-buyers-plan/withdraw-funds-rrsp-s-under-home-buyers-plan.html" target="_blank" rel="noopener noreferrer">CRA: how to withdraw under the HBP</a>`;
 }
