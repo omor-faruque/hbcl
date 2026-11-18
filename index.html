@@ -137,6 +137,27 @@ a.pill:hover{background:var(--fg);color:var(--bg)}
 .rr-note p{margin:0 0 14px;color:var(--mid);font-size:.95rem;max-width:68ch}
 .rr-note ul{margin:0 0 14px;padding-left:20px;color:var(--mid);font-size:.95rem}
 .rr-note li{margin:4px 0}
+.rr-reference{margin:32px 0 0}
+.rr-reference h2{margin:0 0 4px;font-size:1.5rem;letter-spacing:-.02em}
+.rr-reference>p{margin:0 0 14px;color:var(--mid);font-size:.95rem}
+.rr-toggles{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+.rr-toggle{background:none;border:1px solid var(--line);border-radius:999px;padding:7px 16px;color:var(--mid);cursor:pointer}
+.rr-toggle:hover{border-color:var(--fg);color:var(--fg)}
+.rr-toggle[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.rr-option{border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin:0 0 18px}
+.rr-option h3{margin:0 0 8px;font-size:1.15rem;font-weight:600}
+.rr-option p{margin:0 0 10px;color:var(--mid);font-size:.95rem}
+.rr-option ul{margin:0;padding-left:20px;color:var(--mid);font-size:.95rem}
+.rr-option li{margin:6px 0}
+.rr-table-wrap{overflow-x:auto;margin:12px 0 18px}
+.rr-table{width:100%;border-collapse:collapse;font-size:.9rem;text-align:left}
+.rr-table th,.rr-table td{padding:10px 12px;border:1px solid var(--line);vertical-align:top}
+.rr-table th{font-weight:600}
+.rr-table td:first-child{font-weight:600;white-space:nowrap}
+.rr-source{color:var(--fg)}
+.rr-question{border-left:3px solid var(--fg);padding:4px 0 4px 14px;margin:16px 0 0}
+.rr-question b{display:block;font-weight:600}
+.rr-question p{margin:4px 0 0;color:var(--mid);font-size:.95rem}
 @media (max-width:640px){.rr{grid-template-columns:1fr;padding-top:28px}.rr-dates{grid-template-columns:1fr}.rr-dates div{border-left:0;border-top:1px solid var(--line)}.rr-dates div:first-child{border-top:0}}
 @media (max-width:640px){.top{flex-wrap:wrap;gap:12px}.tabs{order:3;flex-basis:100%}summary .note{display:none}.rank .n{font-size:1.8rem}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -355,7 +376,44 @@ function rrspHTML(){
   <ul><li>Withdrawing early may cost you a tax deduction. It does not block the plan.</li><li>The safe day is one day after the full 90, which adds a small buffer.</li><li>Count from the day your RRSP provider received the money, not the day you decided to contribute.</li></ul>
   <p>I am not a tax advisor, so confirm with your RRSP provider or CRA.</p></details>
   <h2 class="h2">Home Buyers\u2019 Plan checklist</h2><ul class="items">${HBP.map((t,i)=>`<li><label><input type="checkbox" data-k="h:${i}" ${checked['h:'+i]?'checked':''}><span class="box"></span><span class="txt"><span class="t">${esc(t)}</span></span></label></li>`).join('')}</ul>
-  <a class="pill" href="https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/rrsps-related-plans/what-home-buyers-plan/withdraw-funds-rrsp-s-under-home-buyers-plan.html" target="_blank" rel="noopener noreferrer">CRA: how to withdraw under the HBP</a>`;
+  <a class="pill" href="https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/rrsps-related-plans/what-home-buyers-plan/withdraw-funds-rrsp-s-under-home-buyers-plan.html" target="_blank" rel="noopener noreferrer">CRA: how to withdraw under the HBP</a>
+  <section class="rr-reference" aria-labelledby="closing-reference-title">
+    <h2 id="closing-reference-title">Closing timing reference</h2>
+    <p>Planning notes for coordinating an HBP withdrawal with your closing date. Confirm eligibility and processing times with CRA, your lawyer and your RRSP provider.</p>
+    <div class="rr-toggles" role="group" aria-label="Choose a closing strategy">
+      <button class="rr-toggle" type="button" data-closing-option="a" aria-pressed="true">Option A · Use RRSP for closing</button>
+      <button class="rr-toggle" type="button" data-closing-option="b" aria-pressed="false">Option B · Bridge funds</button>
+    </div>
+    <div class="rr-option" data-closing-panel="a" aria-labelledby="closing-option-a">
+      <h3 id="closing-option-a">Option A: Use RRSP funds for closing</h3>
+      <p>Use this approach when your HBP withdrawal can be processed before closing.</p>
+      <ul>
+        <li><b>Target closing date:</b> February 2, 2027, or later.</li>
+        <li><b>Tuesday, January 19, 2027 (Day 91):</b> Submit Form T1036 to TD before closing, as soon as the 90-day holding period is complete.</li>
+        <li><b>Processing buffer:</b> This allows about 10 business days for TD to process the withdrawal before closing. Confirm TD's current processing time and leave extra time if possible.</li>
+      </ul>
+    </div>
+    <div class="rr-option" data-closing-panel="b" aria-labelledby="closing-option-b" hidden>
+      <h3 id="closing-option-b">Option B: Earliest Possible Closing (Using Bridge Funds)</h3>
+      <p>Choose this option if the seller insists on an earlier closing and you have other cash available temporarily.</p>
+      <ul>
+        <li><b>Target closing date:</b> Monday, January 4, 2027, or later. A Monday or other business day helps ensure the land registry is open.</li>
+        <li><b>January 4, 2027:</b> Close using temporary bridge cash. The 30-day post-closing HBP withdrawal window runs until February 3, 2027.</li>
+        <li><b>Tuesday, January 19, 2027 (Day 91):</b> Submit Form T1036 to TD as soon as the 90-day holding period is complete.</li>
+        <li><b>By February 3, 2027:</b> This leaves 15 calendar days (about 11 business days) for TD to process the withdrawal before the 30-day post-closing window ends. Processing times are not guaranteed, so confirm them with TD before relying on this schedule.</li>
+      </ul>
+    </div>
+    <h3>Summary comparison</h3>
+    <div class="rr-table-wrap"><table class="rr-table">
+      <thead><tr><th>Strategy</th><th>Ideal closing date</th><th>When you submit Form T1036</th><th>Buffer for TD processing</th></tr></thead>
+      <tbody>
+        <tr><td>Use RRSP for closing</td><td>February 2, 2027 or later</td><td>January 19, 2027 (before closing)</td><td>10 business days before closing</td></tr>
+        <tr><td>Bridge &amp; withdraw after</td><td>January 4, 2027 or later</td><td>January 19, 2027 (after closing)</td><td>About 11 business days before the deadline</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted">Reference: <a class="rr-source" href="https://www.google.com/goto?url=CAESlAEBxCJF1_XzKSCDQB6-vQXp9LiJVHRMipNJgniehzcJc8AIPcH3RVw7O8i_CwDQpaFchOXIFOm8EDkQ-BjMoNNt5tvvLgrbvHCm8yBcjQ_rj7QIoCUH1qXfTOEyS0RPZnEF6CHeytivDrHh0RoT7LrAxPMGahQRe3n4LXebz1gXJ3O1yUvr9zX03T9hnsxy1alHPP0X" target="_blank" rel="noopener noreferrer">Source [1]</a></p>
+    <div class="rr-question"><b>To confirm TD's withdrawal steps</b><p>Are your TD RRSP funds held in cash/savings or investments (such as mutual funds or stocks), and are they with TD Canada Trust or TD Direct Investing? Processing steps and timing may differ.</p></div>
+  </section>`;
 }
 function brokerGroup(g,gi){
   const n=g.items.filter((_,i)=>checked['b:'+gi+':'+i]).length;
@@ -397,6 +455,12 @@ function progress(){
 
 $('#tabs').innerHTML=TABS.map(t=>`<button role="tab" data-id="${t.id}">${t.label}</button>`).join('');
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.id;store.set('hbc2.tab',tab);render();});
+$('#view').addEventListener('click',e=>{
+  const button=e.target.closest('[data-closing-option]');if(!button)return;
+  const reference=button.closest('.rr-reference'), option=button.dataset.closingOption;
+  reference.querySelectorAll('[data-closing-option]').forEach(b=>b.setAttribute('aria-pressed',b===button?'true':'false'));
+  reference.querySelectorAll('[data-closing-panel]').forEach(panel=>{panel.hidden=panel.dataset.closingPanel!==option;});
+});
 $('#view').addEventListener('change',e=>{
   if(e.target.id==='rrspDate'){store.set('hbc2.rrspStart',e.target.value);render();return;}
   const k=e.target.dataset.k;if(!k)return;
