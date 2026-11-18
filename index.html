@@ -418,7 +418,7 @@ function budgetHTML(){
           </div>
           ${key==='tax'?`<form id="annual-tax-form" class="annual-tax">
             <label for="annual-tax">Yearly property tax (CAD)</label>
-            <div class="annual-tax-entry"><input id="annual-tax" type="number" min="0" max="${max*12}" step="0.01" value="${value*12}" required aria-describedby="annual-tax-help"><button type="submit" class="ghost">Apply</button></div>
+            <div class="annual-tax-entry"><input id="annual-tax" type="text" inputmode="decimal" data-max="${max*12}" value="${value*12}" required aria-describedby="annual-tax-help"><button type="submit" class="ghost">Apply</button></div>
             <p id="annual-tax-help">Press Enter or Apply. Divided by 12 and rounded to the nearest dollar for the monthly budget (up to ${money(max*12)}/year).</p>
           </form>`:''}`;
       }).join('')}
@@ -610,6 +610,7 @@ $('#view').addEventListener('change',e=>{
   progress();
 });
 $('#view').addEventListener('input',e=>{
+  if(e.target.id==='annual-tax')e.target.setCustomValidity('');
   if(e.target.dataset.budget){
     if(e.target.id==='house-price')$('#mortgage-amount').value=Number(e.target.value)-Number($('#down-payment').value);
     if(e.target.id==='property-tax')$('#annual-tax').value=Number(e.target.value)*12;
@@ -622,8 +623,13 @@ $('#view').addEventListener('input',e=>{
 $('#view').addEventListener('submit',e=>{
   if(e.target.id!=='annual-tax-form')return;
   e.preventDefault();
+  const annualTax=$('#annual-tax'), raw=annualTax.value.trim();
+  const validFormat=/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(raw);
+  const amount=Number(raw.replace(/,/g,''));
+  const max=Number(annualTax.dataset.max);
+  annualTax.setCustomValidity(validFormat&&Number.isFinite(amount)&&amount<=max?'':`Enter a yearly tax amount up to ${money(max)}, using commas only as thousands separators.`);
   if(!e.target.reportValidity())return;
-  $('#property-tax').value=Math.round(Number($('#annual-tax').value)/12);
+  $('#property-tax').value=Math.round(amount/12);
   updateBudget();
   saveBudget();
 });
