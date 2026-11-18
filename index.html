@@ -397,7 +397,7 @@ function budgetHTML(){
       <div>
         <span class="muted">Total essential monthly cost</span>
         <strong id="budget-total" class="budget-total"></strong>
-        <p id="budget-comparison"></p>
+        <p id="budget-housing-payment"></p>
       </div>
     </div>
     <div class="budget-controls">
@@ -458,8 +458,7 @@ function updateBudget(){
     button.disabled=value<Number(slider.min)||value>Number(slider.max);
   });
   $('#budget-table-total').textContent=money(total);
-  const difference=total-4275;
-  $('#budget-comparison').textContent=difference===0?'Matches your $4,275 monthly baseline.':`${money(Math.abs(difference))}/month ${difference>0?'above':'below'} your $4,275 baseline.`;
+  $('#budget-housing-payment').textContent=`Mortgage + property tax: ${money(payment+tax)}/month`;
   costs.forEach((cost,i)=>{
     const share=cost/total*100;
     $('#budget-cost-'+i).textContent=money(cost);
