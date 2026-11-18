@@ -158,6 +158,29 @@ a.pill:hover{background:var(--fg);color:var(--bg)}
 .rr-question{border-left:3px solid var(--fg);padding:4px 0 4px 14px;margin:16px 0 0}
 .rr-question b{display:block;font-weight:600}
 .rr-question p{margin:4px 0 0;color:var(--mid);font-size:.95rem}
+.budget-heading{font-size:clamp(2rem,5vw,3rem);line-height:1.1;letter-spacing:-.04em;margin:28px 0 12px}
+.budget-summary{border:1px solid var(--line);border-radius:10px;padding:24px;margin:24px 0}
+.budget-total{display:block;font-size:clamp(3rem,10vw,5rem);font-weight:800;letter-spacing:-.05em;line-height:1.1;font-variant-numeric:tabular-nums}
+.budget-summary p{margin:10px 0 0;color:var(--mid)}
+.budget-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;margin:28px 0}
+.budget-controls label{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.budget-controls output{font-weight:600;font-variant-numeric:tabular-nums}
+.budget-controls input{display:block;width:100%;margin:16px 0 8px;accent-color:var(--fg);cursor:pointer}
+.budget-range{display:flex;justify-content:space-between;font-size:.8rem;color:var(--mid)}
+.budget-presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.budget-presets .rr-toggle{font-size:.85rem;padding:4px 12px}
+.annual-tax{margin-top:20px}
+.annual-tax-entry{display:flex;align-items:center;gap:12px;margin:8px 0}
+.annual-tax-entry input{min-width:0;margin:0;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:text}
+.annual-tax p{margin:8px 0 0;color:var(--mid);font-size:.85rem}
+.budget-table{width:100%;border-collapse:collapse;font-size:.95rem}
+.budget-table caption{text-align:left;color:var(--mid);padding-bottom:12px}
+.budget-table th,.budget-table td{padding:14px 0;border-bottom:1px solid var(--line)}
+.budget-table th{text-align:left;font-weight:600}
+.budget-table td,.budget-table th:not(:first-child){text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:14px}
+.budget-table .bar{margin-top:7px;height:4px;max-width:220px}
+.budget-table tfoot{font-weight:800}
+@media (max-width:640px){.budget-controls{grid-template-columns:1fr}.budget-table{font-size:.8rem}.budget-table td,.budget-table th:not(:first-child){padding-left:8px}}
 @media (max-width:640px){.rr{grid-template-columns:1fr;padding-top:28px}.rr-dates{grid-template-columns:1fr}.rr-dates div{border-left:0;border-top:1px solid var(--line)}.rr-dates div:first-child{border-top:0}}
 @media (max-width:640px){.top{flex-wrap:wrap;gap:12px}.tabs{order:3;flex-basis:100%}summary .note{display:none}.rank .n{font-size:1.8rem}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -326,22 +349,102 @@ const ITEMS = [];
 ONLINE.forEach((o,i)=>o.k='o:'+i);
 DATA.forEach(s => s.items.forEach((it,i) => ITEMS.push({k:s.id+':'+i,t:it[0],sev:it[1],flag:it[2]||'',sec:s.title,sid:s.id})));
 
-const TABS = [{id:'top',label:'Top 10 questions'},{id:'sev',label:'By severity'},{id:'area',label:'By area'},{id:'online',label:'Free online checks'},{id:'rrsp',label:'RRSP 90-day counter'},{id:'broker',label:'Ask your broker'}];
+const TABS = [{id:'top',label:'Top 10 questions'},{id:'sev',label:'By severity'},{id:'area',label:'By area'},{id:'rrsp',label:'RRSP 90-day counter'},{id:'broker',label:'Ask your broker'},{id:'budget',label:'Monthly budget'}];
 const INTRO = {
  top:'The ten questions that matter most, from most to least serious. Settle the first four before anything cosmetic.',
  sev:'Every checklist item, grouped from deal-breakers down to minor.',
  area:'Every checklist item, grouped by area of the house.',
  online:'Things you can confirm for free from your couch, with where to look. Ordered from most to least serious.',
  rrsp:'Counts the days since your RRSP contribution so you know when you can withdraw under the Home Buyers\u2019 Plan.',
- broker:'Questions to ask your mortgage broker. Tick each one when asked and write down the answer.'};
+ broker:'Questions to ask your mortgage broker. Tick each one when asked and write down the answer.',
+ budget:'Your essential monthly baseline for a family of three, with no daycare or car loan.'};
 
 const $ = (s,el=document)=>el.querySelector(s);
 const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let checked=store.get('hbc2.checked',{});
 let tab=store.get('hbc2.tab','top');
+if(!TABS.some(t=>t.id===tab))tab='top';
 let open=new Set(store.get('hbc2.open',['s1','research','b0']));
 let notes=store.get('hbc2.notes',{});
+
+const BUDGET = [
+  ['Groceries & Household Staples',600],['Property Taxes',500],['Utilities',400],
+  ['Gas',300],['Basic Home Maintenance',100],['Car Insurance',200],
+  ['Child & Health Basics',200],['Internet & Cell Phones',150],
+  ['Home Insurance',125],['Routine Car Maintenance',100]
+];
+const money=n=>n.toLocaleString('en-CA',{style:'currency',currency:'CAD',maximumFractionDigits:0});
+function mortgagePayment(amount,rate){
+  // Canadian fixed-rate estimate: nominal annual interest compounded semi-annually.
+  const monthly=Math.expm1(Math.log1p(rate/200)/6);
+  return monthly===0?amount/300:amount*monthly/-Math.expm1(-300*Math.log1p(monthly));
+}
+const BUDGET_CONTROLS = [
+  {key:'amount',id:'mortgage-amount',label:'Mortgage amount',max:1500000,step:1,value:300000},
+  {key:'rate',id:'mortgage-rate',label:'Interest rate (%)',max:15,step:0.01,value:4},
+  {key:'tax',id:'property-tax',label:'Property taxes (monthly)',max:3000,step:1,value:490}
+];
+function budgetHTML(){
+  const saved=store.get('hbc2.budget',{});
+  return `<section aria-labelledby="budget-title">
+    <h1 id="budget-title" class="budget-heading">Complete monthly essential budget</h1>
+    <p class="muted">Family of 3 &middot; No daycare &middot; No car loan &middot; All amounts in CAD</p>
+    <div class="budget-summary" aria-live="polite" aria-atomic="true">
+      <span class="muted">Total essential monthly cost</span>
+      <strong id="budget-total" class="budget-total"></strong>
+      <p id="budget-comparison"></p>
+    </div>
+    <div class="budget-controls">
+      ${BUDGET_CONTROLS.map(control=>{
+        const {key,id,label,max,step}=control;
+        const value=Number.isFinite(saved?.[key])&&saved[key]>=0&&saved[key]<=max?saved[key]:control.value;
+        const format=n=>key==='rate'?n.toFixed(2)+'%':money(n);
+        return `<div><label for="${id}">${label} <output id="${id}-value" for="${id}"></output></label>
+          <input id="${id}" type="range" min="0" max="${max}" step="${step}" value="${value}" data-budget="${key}" aria-label="${label} slider" aria-describedby="mortgage-assumptions">
+          <div class="budget-range"><span>${format(0)}</span><span>${format(max)}</span></div>
+          ${key==='amount'?`<div class="budget-presets" role="group" aria-label="Mortgage amount presets">${[300000,350000,400000,450000].map(amount=>`<button type="button" class="rr-toggle" data-mortgage-preset="${amount}" aria-pressed="${value===amount}">${amount/1000}k</button>`).join('')}</div>`:''}
+          ${key==='tax'?`<form id="annual-tax-form" class="annual-tax">
+            <label for="annual-tax">Yearly property tax (CAD)</label>
+            <div class="annual-tax-entry"><input id="annual-tax" type="number" min="0" max="${max*12}" step="0.01" value="${value*12}" required aria-describedby="annual-tax-help"><button type="submit" class="ghost">Apply</button></div>
+            <p id="annual-tax-help">Press Enter or Apply. Divided by 12 and rounded to the nearest dollar for the monthly budget (up to ${money(max*12)}/year).</p>
+          </form>`:''}</div>`;
+      }).join('')}
+    </div>
+    <p id="mortgage-assumptions" class="note-box">Estimate based on a 25-year amortization, monthly payments and Canadian fixed-rate semi-annual compounding. Mortgage amount means the loan balance after your down payment, including any financed mortgage insurance. Payments are rounded to the nearest dollar. Taxes and home insurance are listed separately below; lender quotes may differ.</p>
+    <table class="budget-table">
+      <caption>Monthly breakdown &mdash; adjust the mortgage and property taxes; other essentials stay fixed.</caption>
+      <thead><tr><th scope="col">Expense category</th><th scope="col">Monthly cost</th><th scope="col">Share</th></tr></thead>
+      <tbody>${[['Mortgage Payment',0],...BUDGET].map(([label],i)=>`<tr><th scope="row">${esc(label)}<div class="bar" aria-hidden="true"><i id="budget-bar-${i}"></i></div></th><td id="budget-cost-${i}"></td><td id="budget-share-${i}"></td></tr>`).join('')}</tbody>
+      <tfoot><tr><th scope="row">Total essentials</th><td id="budget-table-total"></td><td>100%</td></tr></tfoot>
+    </table>
+    <p class="muted">Original baseline: $1,500 mortgage + $2,775 other essentials = $4,275/month. This is an essentials-only estimate, excluding savings, discretionary spending and one-time closing costs. Rounded shares may not add to exactly 100%.</p>
+  </section>`;
+}
+function updateBudget(){
+  const amount=Number($('#mortgage-amount').value), rate=Number($('#mortgage-rate').value), tax=Number($('#property-tax').value);
+  const payment=Math.round(mortgagePayment(amount,rate));
+  const costs=[payment,...BUDGET.map(([label,cost])=>label==='Property Taxes'?tax:cost)], total=costs.reduce((sum,cost)=>sum+cost,0);
+  document.querySelectorAll('[data-mortgage-preset]').forEach(button=>button.setAttribute('aria-pressed',Number(button.dataset.mortgagePreset)===amount?'true':'false'));
+  BUDGET_CONTROLS.forEach(({key,id})=>{
+    const value=Number($('#'+id).value), formatted=key==='rate'?value.toFixed(2)+'%':money(value);
+    $('#'+id+'-value').textContent=formatted;
+    $('#'+id).setAttribute('aria-valuetext',formatted);
+  });
+  $('#budget-total').textContent=money(total);
+  $('#budget-table-total').textContent=money(total);
+  const difference=total-4275;
+  $('#budget-comparison').textContent=difference===0?'Matches your $4,275 monthly baseline.':`${money(Math.abs(difference))}/month ${difference>0?'above':'below'} your $4,275 baseline.`;
+  costs.forEach((cost,i)=>{
+    const share=cost/total*100;
+    $('#budget-cost-'+i).textContent=money(cost);
+    $('#budget-share-'+i).textContent=share.toFixed(1)+'%';
+    $('#budget-bar-'+i).style.width=share+'%';
+  });
+}
+function saveBudget(){
+  store.set('hbc2.budget',Object.fromEntries(BUDGET_CONTROLS.map(({key,id})=>[key,Number($('#'+id).value)])));
+}
 
 function itemRow(it,showSec){
   return `<li><label><input type="checkbox" data-k="${it.k}" ${checked[it.k]?'checked':''}><span class="box"></span>
@@ -437,11 +540,15 @@ function render(){
     h=rrspHTML();
   }else if(tab==='broker'){
     h=BROKER.map(brokerGroup).join('');
+  }else if(tab==='budget'){
+    h=budgetHTML();
   }else{
     h=DATA.map(s=>group(s.id,s.title,s.note,ITEMS.filter(i=>i.sid===s.id),false)).join('');
   }
-  $('#hero').hidden=(tab==='rrsp'||tab==='broker');
+  $('#hero').hidden=(tab==='rrsp'||tab==='broker'||tab==='budget');
+  $('#reset').hidden=tab==='budget';
   $('#view').innerHTML=h;
+  if(tab==='budget')updateBudget();
   $('#intro').textContent=INTRO[tab];
   document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.id===tab));
   progress();
@@ -450,12 +557,19 @@ function progress(){
   const done=ITEMS.filter(i=>checked[i.k]).length, total=ITEMS.length, pct=Math.round(done/total*100);
   $('#pct').textContent=pct; $('#bar').style.width=pct+'%';
   const q=TOP10.filter((_,i)=>checked['q:'+i]).length;
-  $('#count').textContent=`${done} of ${total} checklist items checked, ${q} of 10 top questions answered, ${ONLINE.filter(o=>checked[o.k]).length} of ${ONLINE.length} online checks done`;
+  $('#count').textContent=`${done} of ${total} checklist items checked, ${q} of 10 top questions answered`;
 }
 
 $('#tabs').innerHTML=TABS.map(t=>`<button role="tab" data-id="${t.id}">${t.label}</button>`).join('');
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.id;store.set('hbc2.tab',tab);render();});
 $('#view').addEventListener('click',e=>{
+  const preset=e.target.closest('[data-mortgage-preset]');
+  if(preset){
+    $('#mortgage-amount').value=preset.dataset.mortgagePreset;
+    updateBudget();
+    saveBudget();
+    return;
+  }
   const button=e.target.closest('[data-closing-option]');if(!button)return;
   const reference=button.closest('.rr-reference'), option=button.dataset.closingOption;
   reference.querySelectorAll('[data-closing-option]').forEach(b=>b.setAttribute('aria-pressed',b===button?'true':'false'));
@@ -470,7 +584,23 @@ $('#view').addEventListener('change',e=>{
     $('.tally',det).textContent=n+'/'+boxes.length;det.classList.toggle('done',n===boxes.length);}
   progress();
 });
-$('#view').addEventListener('input',e=>{const n=e.target.dataset&&e.target.dataset.n;if(!n)return;notes[n]=e.target.value;store.set('hbc2.notes',notes);});
+$('#view').addEventListener('input',e=>{
+  if(e.target.dataset.budget){
+    if(e.target.id==='property-tax')$('#annual-tax').value=Number(e.target.value)*12;
+    updateBudget();
+    saveBudget();
+    return;
+  }
+  const n=e.target.dataset&&e.target.dataset.n;if(!n)return;notes[n]=e.target.value;store.set('hbc2.notes',notes);
+});
+$('#view').addEventListener('submit',e=>{
+  if(e.target.id!=='annual-tax-form')return;
+  e.preventDefault();
+  if(!e.target.reportValidity())return;
+  $('#property-tax').value=Math.round(Number($('#annual-tax').value)/12);
+  updateBudget();
+  saveBudget();
+});
 $('#view').addEventListener('toggle',e=>{const id=e.target.dataset&&e.target.dataset.id;if(!id)return;
   e.target.open?open.add(id):open.delete(id);store.set('hbc2.open',[...open]);},true);
 $('#reset').addEventListener('click',()=>{if(confirm('Clear every checkmark?')){checked={};store.set('hbc2.checked',checked);render();}});
