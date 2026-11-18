@@ -158,18 +158,20 @@ a.pill:hover{background:var(--fg);color:var(--bg)}
 .rr-question{border-left:3px solid var(--fg);padding:4px 0 4px 14px;margin:16px 0 0}
 .rr-question b{display:block;font-weight:600}
 .rr-question p{margin:4px 0 0;color:var(--mid);font-size:.95rem}
-.budget-heading{font-size:clamp(2rem,5vw,3rem);line-height:1.1;letter-spacing:-.04em;margin:28px 0 12px}
-.budget-summary{border:1px solid var(--line);border-radius:10px;padding:24px;margin:24px 0}
-.budget-total{display:block;font-size:clamp(3rem,10vw,5rem);font-weight:800;letter-spacing:-.05em;line-height:1.1;font-variant-numeric:tabular-nums}
-.budget-summary p{margin:10px 0 0;color:var(--mid)}
-.budget-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;margin:28px 0}
+.budget-heading{font-size:clamp(1.5rem,4vw,2rem);line-height:1.1;letter-spacing:-.04em;margin:18px 0 8px}
+.budget-subtitle{margin:0;font-size:.9rem}
+.budget-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;border:1px solid var(--line);border-radius:10px;padding:16px;margin:16px 0;font-size:.85rem}
+.budget-total{display:block;font-size:clamp(1.9rem,4.5vw,4.2rem);font-weight:800;letter-spacing:-.05em;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:4px}
+.budget-summary p{margin:6px 0 0;color:var(--mid);font-size:.8rem}
+.budget-summary .budget-price-note{grid-column:1/-1;margin:0}
+.budget-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px;margin:18px 0;font-size:.9rem}
 .budget-controls label{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .budget-controls output{font-weight:600;font-variant-numeric:tabular-nums}
-.budget-controls input{display:block;width:100%;margin:16px 0 8px;accent-color:var(--fg);cursor:pointer}
+.budget-controls input{display:block;width:100%;margin:10px 0 4px;accent-color:var(--fg);cursor:pointer}
 .budget-range{display:flex;justify-content:space-between;font-size:.8rem;color:var(--mid)}
-.budget-presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.budget-presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .budget-presets .rr-toggle{font-size:.85rem;padding:4px 12px}
-.annual-tax{margin-top:20px}
+.annual-tax{margin-top:12px}
 .annual-tax-entry{display:flex;align-items:center;gap:12px;margin:8px 0}
 .annual-tax-entry input{min-width:0;margin:0;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:text}
 .annual-tax p{margin:8px 0 0;color:var(--mid);font-size:.85rem}
@@ -381,7 +383,8 @@ function mortgagePayment(amount,rate){
   return monthly===0?amount/300:amount*monthly/-Math.expm1(-300*Math.log1p(monthly));
 }
 const BUDGET_CONTROLS = [
-  {key:'amount',id:'mortgage-amount',label:'Mortgage amount',max:1500000,step:1,value:300000},
+  {key:'amount',id:'mortgage-amount',label:'Mortgage amount',max:1500000,step:1,value:300000,presets:[300000,350000,400000,450000]},
+  {key:'downPayment',id:'down-payment',label:'Down payment',max:1500000,step:1,value:300000,presets:[300000,350000,400000]},
   {key:'rate',id:'mortgage-rate',label:'Interest rate (%)',max:15,step:0.01,value:4},
   {key:'tax',id:'property-tax',label:'Property taxes (monthly)',max:3000,step:1,value:490}
 ];
@@ -389,11 +392,19 @@ function budgetHTML(){
   const saved=store.get('hbc2.budget',{});
   return `<section aria-labelledby="budget-title">
     <h1 id="budget-title" class="budget-heading">Complete monthly essential budget</h1>
-    <p class="muted">Family of 3 &middot; No daycare &middot; No car loan &middot; All amounts in CAD</p>
+    <p class="muted budget-subtitle">Family of 3 &middot; No daycare &middot; No car loan &middot; All amounts in CAD</p>
     <div class="budget-summary" aria-live="polite" aria-atomic="true">
-      <span class="muted">Total essential monthly cost</span>
-      <strong id="budget-total" class="budget-total"></strong>
-      <p id="budget-comparison"></p>
+      <div>
+        <span class="muted">Total essential monthly cost</span>
+        <strong id="budget-total" class="budget-total"></strong>
+        <p id="budget-comparison"></p>
+      </div>
+      <div>
+        <span class="muted">Total house price</span>
+        <strong id="house-price" class="budget-total"></strong>
+        <p id="house-price-breakdown"></p>
+      </div>
+      <p class="budget-price-note">House price = mortgage + down payment, excluding closing costs. Assumes no mortgage insurance premium is financed in the loan.</p>
     </div>
     <div class="budget-controls">
       ${BUDGET_CONTROLS.map(control=>{
@@ -403,7 +414,7 @@ function budgetHTML(){
         return `<div><label for="${id}">${label} <output id="${id}-value" for="${id}"></output></label>
           <input id="${id}" type="range" min="0" max="${max}" step="${step}" value="${value}" data-budget="${key}" aria-label="${label} slider" aria-describedby="mortgage-assumptions">
           <div class="budget-range"><span>${format(0)}</span><span>${format(max)}</span></div>
-          ${key==='amount'?`<div class="budget-presets" role="group" aria-label="Mortgage amount presets">${[300000,350000,400000,450000].map(amount=>`<button type="button" class="rr-toggle" data-mortgage-preset="${amount}" aria-pressed="${value===amount}">${amount/1000}k</button>`).join('')}</div>`:''}
+          ${control.presets?`<div class="budget-presets" role="group" aria-label="${label} presets">${control.presets.map(amount=>`<button type="button" class="rr-toggle" data-budget-preset="${amount}" data-budget-target="${id}" aria-pressed="${value===amount}">${amount/1000}k</button>`).join('')}</div>`:''}
           ${key==='tax'?`<form id="annual-tax-form" class="annual-tax">
             <label for="annual-tax">Yearly property tax (CAD)</label>
             <div class="annual-tax-entry"><input id="annual-tax" type="number" min="0" max="${max*12}" step="0.01" value="${value*12}" required aria-describedby="annual-tax-help"><button type="submit" class="ghost">Apply</button></div>
@@ -425,13 +436,16 @@ function updateBudget(){
   const amount=Number($('#mortgage-amount').value), rate=Number($('#mortgage-rate').value), tax=Number($('#property-tax').value);
   const payment=Math.round(mortgagePayment(amount,rate));
   const costs=[payment,...BUDGET.map(([label,cost])=>label==='Property Taxes'?tax:cost)], total=costs.reduce((sum,cost)=>sum+cost,0);
-  document.querySelectorAll('[data-mortgage-preset]').forEach(button=>button.setAttribute('aria-pressed',Number(button.dataset.mortgagePreset)===amount?'true':'false'));
+  document.querySelectorAll('[data-budget-preset]').forEach(button=>button.setAttribute('aria-pressed',Number(button.dataset.budgetPreset)===Number($('#'+button.dataset.budgetTarget).value)?'true':'false'));
   BUDGET_CONTROLS.forEach(({key,id})=>{
     const value=Number($('#'+id).value), formatted=key==='rate'?value.toFixed(2)+'%':money(value);
     $('#'+id+'-value').textContent=formatted;
     $('#'+id).setAttribute('aria-valuetext',formatted);
   });
   $('#budget-total').textContent=money(total);
+  const downPayment=Number($('#down-payment').value);
+  $('#house-price').textContent=money(amount+downPayment);
+  $('#house-price-breakdown').textContent=`${money(amount)} mortgage + ${money(downPayment)} down payment`;
   $('#budget-table-total').textContent=money(total);
   const difference=total-4275;
   $('#budget-comparison').textContent=difference===0?'Matches your $4,275 monthly baseline.':`${money(Math.abs(difference))}/month ${difference>0?'above':'below'} your $4,275 baseline.`;
@@ -563,9 +577,9 @@ function progress(){
 $('#tabs').innerHTML=TABS.map(t=>`<button role="tab" data-id="${t.id}">${t.label}</button>`).join('');
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.id;store.set('hbc2.tab',tab);render();});
 $('#view').addEventListener('click',e=>{
-  const preset=e.target.closest('[data-mortgage-preset]');
+  const preset=e.target.closest('[data-budget-preset]');
   if(preset){
-    $('#mortgage-amount').value=preset.dataset.mortgagePreset;
+    $('#'+preset.dataset.budgetTarget).value=preset.dataset.budgetPreset;
     updateBudget();
     saveBudget();
     return;
