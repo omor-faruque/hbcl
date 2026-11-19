@@ -167,6 +167,8 @@ a.pill:hover{background:var(--fg);color:var(--bg)}
 .budget-controls label{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .budget-controls output{font-weight:600;font-variant-numeric:tabular-nums}
 .budget-controls input{display:block;width:100%;margin:10px 0 4px;accent-color:var(--fg);cursor:pointer}
+.budget-calculated{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:10px 0;font-size:.9rem}
+.budget-calculated output{font-size:1.1rem}
 .budget-range{display:flex;justify-content:space-between;font-size:.8rem;color:var(--mid)}
 .budget-presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .budget-presets .rr-toggle{font-size:.85rem;padding:4px 12px}
@@ -383,13 +385,18 @@ function mortgagePayment(amount,rate){
   return monthly===0?amount/300:amount*monthly/-Math.expm1(-300*Math.log1p(monthly));
 }
 const BUDGET_CONTROLS = [
-  {key:'amount',id:'mortgage-amount',label:'Mortgage amount',max:1500000,step:1,value:300000,presets:[300000,350000,400000,450000]},
   {key:'downPayment',id:'down-payment',label:'Down payment',max:1500000,step:1,value:300000,presets:[300000,350000,400000]},
   {key:'rate',id:'mortgage-rate',label:'Interest rate (%)',max:15,step:0.01,value:4},
   {key:'tax',id:'property-tax',label:'Property taxes (monthly)',max:3000,step:1,value:490}
 ];
 function budgetHTML(){
   const saved=store.get('hbc2.budget',{});
+  const savedDownPayment=Number.isFinite(saved?.downPayment)&&saved.downPayment>=0&&saved.downPayment<=1500000?saved.downPayment:300000;
+  const initialHousePrice=Number.isFinite(saved?.housePrice)&&saved.housePrice>=savedDownPayment&&saved.housePrice<=3000000
+    ?saved.housePrice
+    :Number.isFinite(saved?.amount)&&saved.amount>=0&&saved.amount<=1500000
+      ?Math.min(3000000,saved.amount+savedDownPayment)
+      :600000;
   return `<section aria-labelledby="budget-title">
     <h1 id="budget-title" class="budget-heading">Complete monthly essential budget</h1>
     <p class="muted budget-subtitle">Family of 3 &middot; No daycare &middot; No car loan &middot; All amounts in CAD</p>
@@ -403,10 +410,11 @@ function budgetHTML(){
     <div class="budget-controls">
       <div class="budget-house-price">
         <label for="house-price">Total house price <output id="house-price-value" for="house-price"></output></label>
-        <input id="house-price" type="range" min="0" max="3000000" step="1" data-budget="housePrice" aria-describedby="mortgage-assumptions">
+        <input id="house-price" type="range" min="${savedDownPayment}" max="3000000" step="1" value="${initialHousePrice}" data-budget="housePrice" aria-describedby="mortgage-assumptions">
         <div class="budget-range"><span id="house-price-min"></span><span id="house-price-max"></span></div>
         <div class="budget-presets" role="group" aria-label="House price presets">${[600000,650000,700000,750000,800000].map(price=>`<button type="button" class="rr-toggle" data-budget-preset="${price}" data-budget-target="house-price" aria-pressed="false">${price/1000}k</button>`).join('')}</div>
       </div>
+      <div class="budget-calculated"><span>Mortgage amount</span><output id="mortgage-amount" aria-live="polite"></output></div>
       ${BUDGET_CONTROLS.map(control=>{
         const {key,id,label,max,step}=control;
         const value=Number.isFinite(saved?.[key])&&saved[key]>=0&&saved[key]<=max?saved[key]:control.value;
@@ -423,7 +431,7 @@ function budgetHTML(){
           </form>`:''}`;
       }).join('')}
     </div>
-    <p id="mortgage-assumptions" class="note-box">Estimate based on a 25-year amortization, monthly payments and Canadian fixed-rate semi-annual compounding. Changing house price keeps the down payment fixed and adjusts the mortgage. House price equals mortgage plus down payment, excluding closing costs, and assumes no financed mortgage insurance. House-price presets below your down payment are unavailable. Payments are rounded to the nearest dollar. Taxes and home insurance are listed separately below; lender quotes may differ.</p>
+    <p id="mortgage-assumptions" class="note-box">Mortgage amount is total house price minus down payment. The payment estimate uses a 25-year amortization, monthly payments and Canadian fixed-rate semi-annual compounding. Closing costs and financed mortgage insurance are excluded. Payments are rounded to the nearest dollar. Taxes and home insurance are listed separately below; lender quotes may differ.</p>
     <table class="budget-table">
       <caption>Monthly breakdown &mdash; adjust the mortgage and property taxes; other essentials stay fixed.</caption>
       <thead><tr><th scope="col">Expense category</th><th scope="col">Monthly cost</th><th scope="col">Share</th></tr></thead>
@@ -434,7 +442,11 @@ function budgetHTML(){
   </section>`;
 }
 function updateBudget(){
-  const amount=Number($('#mortgage-amount').value), rate=Number($('#mortgage-rate').value), tax=Number($('#property-tax').value);
+  const housePriceControl=$('#house-price'), downPayment=Number($('#down-payment').value);
+  housePriceControl.min=downPayment;
+  if(Number(housePriceControl.value)<downPayment)housePriceControl.value=downPayment;
+  const housePrice=Number(housePriceControl.value);
+  const amount=housePrice-downPayment, rate=Number($('#mortgage-rate').value), tax=Number($('#property-tax').value);
   const payment=Math.round(mortgagePayment(amount,rate));
   const costs=[payment,...BUDGET.map(([label,cost])=>label==='Property Taxes'?tax:cost)], total=costs.reduce((sum,cost)=>sum+cost,0);
   BUDGET_CONTROLS.forEach(({key,id})=>{
@@ -443,13 +455,10 @@ function updateBudget(){
     $('#'+id).setAttribute('aria-valuetext',formatted);
   });
   $('#budget-total').textContent=money(total);
-  const downPayment=Number($('#down-payment').value);
-  const housePrice=$('#house-price'), maxPrice=downPayment+Number($('#mortgage-amount').max);
-  housePrice.max=maxPrice;
-  housePrice.min=downPayment;
-  housePrice.value=amount+downPayment;
-  housePrice.setAttribute('aria-valuetext',money(amount+downPayment));
-  $('#house-price-value').textContent=money(amount+downPayment);
+  const maxPrice=3000000;
+  housePriceControl.setAttribute('aria-valuetext',money(Number(housePriceControl.value)));
+  $('#mortgage-amount').textContent=money(amount);
+  $('#house-price-value').textContent=money(Number(housePriceControl.value));
   $('#house-price-min').textContent=money(downPayment);
   $('#house-price-max').textContent=money(maxPrice);
   document.querySelectorAll('[data-budget-preset]').forEach(button=>{
@@ -467,7 +476,10 @@ function updateBudget(){
   });
 }
 function saveBudget(){
-  store.set('hbc2.budget',Object.fromEntries(BUDGET_CONTROLS.map(({key,id})=>[key,Number($('#'+id).value)])));
+  store.set('hbc2.budget',{
+    housePrice:Number($('#house-price').value),
+    ...Object.fromEntries(BUDGET_CONTROLS.map(({key,id})=>[key,Number($('#'+id).value)]))
+  });
 }
 
 function itemRow(it,showSec){
@@ -611,7 +623,6 @@ $('#view').addEventListener('change',e=>{
 $('#view').addEventListener('input',e=>{
   if(e.target.id==='annual-tax')e.target.setCustomValidity('');
   if(e.target.dataset.budget){
-    if(e.target.id==='house-price')$('#mortgage-amount').value=Number(e.target.value)-Number($('#down-payment').value);
     if(e.target.id==='property-tax')$('#annual-tax').value=Number(e.target.value)*12;
     updateBudget();
     saveBudget();
