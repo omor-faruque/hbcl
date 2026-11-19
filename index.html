@@ -183,6 +183,16 @@ a.pill:hover{background:var(--fg);color:var(--bg)}
 .budget-table td,.budget-table th:not(:first-child){text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:14px}
 .budget-table .bar{margin-top:7px;height:4px;max-width:220px}
 .budget-table tfoot{font-weight:800}
+.budget-table .budget-group-head th{padding:28px 0 10px;font-size:1.15rem;letter-spacing:-.01em;text-align:left;border-bottom:2px solid var(--fg)}
+.budget-table .budget-group-head span{display:block;font-size:.85rem;font-weight:400;color:var(--mid);letter-spacing:0}
+.budget-table .budget-subtotal th,.budget-table .budget-subtotal td{font-weight:600;color:var(--mid);border-bottom:0;padding-bottom:6px}
+.budget-group-own .bar i{background:var(--accent)}
+.budget-split{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.budget-split>div{border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.budget-split span,.budget-split small{display:block;color:var(--mid)}
+.budget-split b{display:block;font-size:1.6rem;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.budget-split-own{border-color:var(--accent)!important}
+@media (max-width:640px){.budget-split{grid-template-columns:1fr}}
 @media (max-width:640px){.budget-controls{grid-template-columns:1fr}.budget-table{font-size:.8rem}.budget-table td,.budget-table th:not(:first-child){padding-left:8px}}
 @media (max-width:640px){.rr{grid-template-columns:1fr;padding-top:28px}.rr-dates{grid-template-columns:1fr}.rr-dates div{border-left:0;border-top:1px solid var(--line)}.rr-dates div:first-child{border-top:0}}
 @media (max-width:640px){.top{flex-wrap:wrap;gap:12px}.tabs{order:3;flex-basis:100%}summary .note{display:none}.rank .n{font-size:1.8rem}}
@@ -502,11 +512,17 @@ if(!TABS.some(t=>t.id===tab))tab='top';
 let open=new Set(store.get('hbc2.open',['s1','research','b0']));
 let notes=store.get('hbc2.notes',{});
 
+// group: 'any' = paid whether you rent or own, 'own' = only because you own the home
 const BUDGET = [
-  ['Groceries & Household Staples',500],['Property Taxes',500],['Utilities',300],
-  ['Car Gas',250],['Basic Home Maintenance',100],['Car Insurance',200],
-  ['Child & Health Basics',200],['Internet & Cell Phones',150],
-  ['Home Insurance',125],['Routine Car Maintenance',100]
+  ['Groceries & Household Staples',400,'any'],['Property Taxes',500,'own'],['Utilities',300,'any'],
+  ['Car Gas',200,'any'],['Basic Home Maintenance',100,'own'],['Car Insurance',200,'any'],
+  ['Child & Health Basics',150,'any'],['Internet & Cell Phones',150,'any'],
+  ['Home Insurance',125,'own'],['Routine Car Maintenance',100,'any']
+];
+const BUDGET_ROWS=[['Mortgage Payment',0,'own'],...BUDGET];
+const BUDGET_GROUPS=[
+  {id:'any',title:'Everyday essentials',note:'You pay these whether you rent or own'},
+  {id:'own',title:'Costs of owning',note:'Only because you own the home'}
 ];
 const money=n=>n.toLocaleString('en-CA',{style:'currency',currency:'CAD',maximumFractionDigits:0});
 function mortgagePayment(amount,rate){
@@ -536,6 +552,7 @@ function budgetHTML(){
         <strong id="budget-total" class="budget-total"></strong>
         <p id="budget-housing-payment"></p>
       </div>
+      <div class="budget-split">${BUDGET_GROUPS.map(g=>`<div class="budget-split-${g.id}"><span>${g.title}</span><b id="budget-sub-${g.id}"></b><small>${g.note}</small></div>`).join('')}</div>
     </div>
     <div class="budget-controls">
       <div class="budget-house-price">
@@ -563,12 +580,16 @@ function budgetHTML(){
     </div>
     <p id="mortgage-assumptions" class="note-box">Mortgage amount is total house price minus down payment. The payment estimate uses a 25-year amortization, monthly payments and Canadian fixed-rate semi-annual compounding. Closing costs and financed mortgage insurance are excluded. Payments are rounded to the nearest dollar. Taxes and home insurance are listed separately below; lender quotes may differ.</p>
     <table class="budget-table">
-      <caption>Monthly breakdown &mdash; adjust the mortgage and property taxes; other essentials stay fixed.</caption>
+      <caption>Monthly breakdown, split into costs you would have anyway and costs of owning. Adjust the mortgage and property taxes; other essentials stay fixed.</caption>
       <thead><tr><th scope="col">Expense category</th><th scope="col">Monthly cost</th><th scope="col">Share</th></tr></thead>
-      <tbody>${[['Mortgage Payment',0],...BUDGET].map(([label],i)=>`<tr><th scope="row">${esc(label)}<div class="bar" aria-hidden="true"><i id="budget-bar-${i}"></i></div></th><td id="budget-cost-${i}"></td><td id="budget-share-${i}"></td></tr>`).join('')}</tbody>
+      ${BUDGET_GROUPS.map(g=>`<tbody class="budget-group budget-group-${g.id}">
+        <tr class="budget-group-head"><th scope="rowgroup" colspan="3">${g.title}<span>${g.note}</span></th></tr>
+        ${BUDGET_ROWS.map((row,i)=>row[2]!==g.id?'':`<tr><th scope="row">${esc(row[0])}<div class="bar" aria-hidden="true"><i id="budget-bar-${i}"></i></div></th><td id="budget-cost-${i}"></td><td id="budget-share-${i}"></td></tr>`).join('')}
+        <tr class="budget-subtotal"><th scope="row">Subtotal: ${g.title.toLowerCase()}</th><td id="budget-subtotal-${g.id}"></td><td id="budget-subshare-${g.id}"></td></tr>
+      </tbody>`).join('')}
       <tfoot><tr><th scope="row">Total essentials</th><td id="budget-table-total"></td><td>100%</td></tr></tfoot>
     </table>
-    <p class="muted">Original baseline: $1,500 mortgage + $2,775 other essentials = $4,275/month. This is an essentials-only estimate, excluding savings, discretionary spending and one-time closing costs. Rounded shares may not add to exactly 100%.</p>
+    <p class="muted">Original baseline: $1,500 mortgage + $2,775 other essentials = $4,275/month. If you rent instead, replace the costs of owning with rent plus tenant insurance (usually $20 to $40/month). Utilities are counted as everyday because most renters pay some of them, though owners usually also pay water and more of the heating. This is an essentials-only estimate, excluding savings, discretionary spending and one-time closing costs. Rounded shares may not add to exactly 100%.</p>
   </section>`;
 }
 function updateBudget(){
@@ -578,7 +599,7 @@ function updateBudget(){
   const housePrice=Number(housePriceControl.value);
   const amount=housePrice-downPayment, rate=Number($('#mortgage-rate').value), tax=Number($('#property-tax').value);
   const payment=Math.round(mortgagePayment(amount,rate));
-  const costs=[payment,...BUDGET.map(([label,cost])=>label==='Property Taxes'?tax:cost)], total=costs.reduce((sum,cost)=>sum+cost,0);
+  const costs=BUDGET_ROWS.map(([label,cost])=>label==='Mortgage Payment'?payment:label==='Property Taxes'?tax:cost), total=costs.reduce((sum,cost)=>sum+cost,0);
   BUDGET_CONTROLS.forEach(({key,id})=>{
     const value=Number($('#'+id).value), formatted=key==='rate'?value.toFixed(2)+'%':money(value);
     $('#'+id+'-value').textContent=formatted;
@@ -603,6 +624,12 @@ function updateBudget(){
     $('#budget-cost-'+i).textContent=money(cost);
     $('#budget-share-'+i).textContent=share.toFixed(1)+'%';
     $('#budget-bar-'+i).style.width=share+'%';
+  });
+  BUDGET_GROUPS.forEach(({id})=>{
+    const sub=costs.reduce((sum,cost,i)=>BUDGET_ROWS[i][2]===id?sum+cost:sum,0);
+    tween($('#budget-sub-'+id),sub,money,500);
+    $('#budget-subtotal-'+id).textContent=money(sub);
+    $('#budget-subshare-'+id).textContent=(sub/total*100).toFixed(1)+'%';
   });
 }
 function saveBudget(){
